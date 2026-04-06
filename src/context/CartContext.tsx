@@ -1,19 +1,28 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 
+// 1. Ampliamos la interfaz para soportar la información de las variantes y un ID único
 interface CartItem {
-  id: string;
+  cartItemId: string; // ID único generado (ej: "DQ-001-Azul-Talle-42")
+  id: string; // ID real del producto
   title: string;
   price: string;
   category: string;
   quantity: number;
+  variantInfo?: string; // Ej: "Azul Marino - Talle L"
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: Omit<CartItem, "quantity">) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, newQuantity: number) => void;
+  addToCart: (item: Omit<CartItem, "quantity" | "cartItemId">) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, newQuantity: number) => void;
   clearCart: () => void;
   totalPrice: number;
 }
@@ -21,56 +30,78 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  // 1. Inicializamos el estado con una función de inicialización perezosa (Lazy Initializer)
-  // Esto evita el error de setState dentro del useEffect y problemas de hidratación.
   const [cart, setCart] = useState<CartItem[]>([]);
+  // Usamos una referencia para saber si ya cargamos los datos y no pisar el localStorage por accidente
+  const hasLoaded = useRef(false);
 
-  // 2. Efecto para CARGAR: Se ejecuta solo una vez al montar en el cliente
+  // 2. Efecto para CARGAR: Lo hacemos asíncrono para evitar el error del linter
   useEffect(() => {
     const savedCart = localStorage.getItem("ts-cart");
     if (savedCart) {
       try {
-        setCart(JSON.parse(savedCart));
+        const parsedCart = JSON.parse(savedCart);
+        // El setTimeout(..., 0) pasa la actualización al final de la cola de tareas.
+        // Esto soluciona el warning de "Calling setState synchronously within an effect"
+        setTimeout(() => {
+          setCart(parsedCart);
+          hasLoaded.current = true;
+        }, 0);
+        return;
       } catch (e) {
         console.error("Error parsing cart", e);
       }
     }
+    hasLoaded.current = true;
   }, []);
 
-  // 3. Efecto para GUARDAR: Solo guarda si el carrito tiene algo o si ya existía algo previo
+  // 3. Efecto para GUARDAR: Solo guarda si ya pasó la carga inicial
   useEffect(() => {
-    // Evitamos guardar un array vacío sobre algo que ya existía durante el primer render
-    if (cart.length > 0) {
-      localStorage.setItem("ts-cart", JSON.stringify(cart));
-    } else if (cart.length === 0 && localStorage.getItem("ts-cart")) {
-      // Si el carrito se vació intencionalmente (botón vaciar), ahí sí actualizamos
-      localStorage.setItem("ts-cart", JSON.stringify([]));
-    }
+    if (!hasLoaded.current) return;
+    localStorage.setItem("ts-cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: Omit<CartItem, "quantity">) => {
+  // AGREGAR AL CARRITO (Soportando variantes)
+  const addToCart = (product: Omit<CartItem, "quantity" | "cartItemId">) => {
     setCart((prev) => {
-      const existingItem = prev.find((item) => item.id === product.id);
+      // Generamos un ID único concatenando el ID del producto y sus variantes
+      const uniqueCartItemId = product.variantInfo
+        ? `${product.id}-${product.variantInfo.replace(/\s+/g, "-")}`
+        : product.id;
+
+      const existingItem = prev.find(
+        (item) => item.cartItemId === uniqueCartItemId,
+      );
+
       if (existingItem) {
+        // Si ya existe la misma prenda con EXACTAMENTE el mismo talle/color, sumamos cantidad
         return prev.map((item) =>
-          item.id === product.id
+          item.cartItemId === uniqueCartItemId
             ? { ...item, quantity: item.quantity + 1 }
             : item,
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+
+      // Si no existe, lo agregamos como ítem nuevo
+      return [
+        ...prev,
+        { ...product, cartItemId: uniqueCartItemId, quantity: 1 },
+      ];
     });
   };
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+  // ELIMINAR DEL CARRITO (Usamos el cartItemId único)
+  const removeFromCart = (cartItemId: string) => {
+    setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
   };
 
-  const updateQuantity = (id: string, newQuantity: number) => {
+  // ACTUALIZAR CANTIDAD (Usamos el cartItemId único)
+  const updateQuantity = (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     setCart((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item,
+        item.cartItemId === cartItemId
+          ? { ...item, quantity: newQuantity }
+          : item,
       ),
     );
   };

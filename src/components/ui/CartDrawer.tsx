@@ -11,24 +11,23 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showWSModal, setShowWSModal] = useState(false);
-  const { cart, removeFromCart, updateQuantity, totalPrice, clearCart } =
-    useCart();
+  const { cart, removeFromCart, updateQuantity, totalPrice } = useCart();
   const WHATSAPP_NUMBER = "5493446123456";
 
   const generateWSMessage = () => {
     const productList = cart
-      .map(
-        (item) =>
-          `${item.quantity}x ${item.title} - $${(Number(item.price) * item.quantity).toLocaleString("es-AR")}`,
-      )
+      .map((item) => {
+        // Agregamos la información de la variante si existe
+        const variantStr = item.variantInfo ? ` (${item.variantInfo})` : "";
+        return `${item.quantity}x ${item.title}${variantStr} - $${(Number(item.price) * item.quantity).toLocaleString("es-AR")}`;
+      })
       .join("\n");
 
-    return `NUEVO PEDIDO - MARUKIS 🧉\n\nHola! Me gustaría encargar la siguiente selección:\n\n${productList}\n\nTOTAL ESTIMADO: $${totalPrice.toLocaleString("es-AR")}\n\nPor favor, confírmenme disponibilidad para coordinar el pago y retiro.`;
+    return `NUEVO PEDIDO - DON QUIJOTE 👔\n\nHola! Me gustaría consultar por la siguiente selección:\n\n${productList}\n\nTOTAL ESTIMADO: $${totalPrice.toLocaleString("es-AR")}\n\n¿Tienen disponibilidad en el local para pasar a probarme?`;
   };
 
   const handleFinalSend = () => {
@@ -46,16 +45,16 @@ export const CartDrawer = () => {
       {/* BOTÓN DISPARADOR */}
       <button
         onClick={() => setIsOpen(true)}
-        className="group relative flex items-center justify-center p-2 text-foreground/70 hover:text-primary transition-colors"
+        className="group relative flex items-center justify-center p-2 text-foreground/80 hover:text-foreground transition-colors"
       >
-        <ShoppingBag className="size-6" strokeWidth={2} />
+        <ShoppingBag className="size-6" strokeWidth={1.5} />
         <AnimatePresence>
           {cart.length > 0 && (
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
-              className="absolute top-0 right-0 size-5 bg-primary text-[9px] text-background flex items-center justify-center rounded-full font-semibold shadow-sm border-2 border-background"
+              className="absolute top-0 right-0 size-4 bg-foreground text-[9px] text-background flex items-center justify-center rounded-full font-bold shadow-sm"
             >
               {cart.reduce((acc, item) => acc + item.quantity, 0)}
             </motion.span>
@@ -72,58 +71,73 @@ export const CartDrawer = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-120 bg-black/60 backdrop-blur-sm min-h-screen"
+              className="fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm min-h-screen"
             />
 
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-screen w-full max-w-md z-130 bg-background shadow-2xl flex flex-col"
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed top-0 right-0 h-screen w-full max-w-md z-[130] bg-background shadow-2xl flex flex-col border-l border-border"
             >
               {/* HEADER */}
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">
                     Tu Selección
                   </span>
-                  <h2 className="text-xl font-bold text-foreground">
-                    Caja de Alfajores
+                  <h2 className="text-xl font-bold text-foreground tracking-tight uppercase">
+                    Carrito de Compras
                   </h2>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                  className="p-2 hover:bg-border/50 transition-colors text-foreground"
                 >
-                  <X className="size-6" />
+                  <X className="size-5" />
                 </button>
               </div>
 
-              {/* LISTA */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* LISTA DE PRODUCTOS */}
+              <div
+                className="flex-1 overflow-y-auto p-6 space-y-4 data-lenis-prevent"
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+              >
                 {cart.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground/40">
-                    <ShoppingBag className="size-16 mb-4 opacity-20" />
-                    <p className="text-xs font-bold uppercase tracking-widest">
-                      Tu caja está vacía
+                  <div className="h-full flex flex-col items-center justify-center text-foreground/30">
+                    <ShoppingBag
+                      className="size-16 mb-4 opacity-50"
+                      strokeWidth={1}
+                    />
+                    <p className="text-xs font-bold uppercase tracking-widest text-foreground/50">
+                      No hay prendas seleccionadas
                     </p>
                   </div>
                 ) : (
                   cart.map((item) => (
                     <motion.div
-                      key={item.id}
+                      key={item.cartItemId} // Usamos el ID único generado en el Context
                       layout
-                      className="flex gap-4 p-4 border border-border rounded-xl bg-card shadow-sm"
+                      className="flex gap-4 p-4 border border-border bg-background transition-colors hover:border-foreground/20"
                     >
                       <div className="flex-1">
-                        <span className="text-[9px] font-bold text-primary uppercase tracking-tighter">
+                        <span className="text-[9px] font-bold text-foreground/50 uppercase tracking-widest block mb-1">
                           {item.category}
                         </span>
-                        <h4 className="text-sm font-bold leading-tight mb-1">
+                        <h4 className="text-sm font-bold leading-tight mb-1 uppercase tracking-tight text-foreground">
                           {item.title}
                         </h4>
-                        <p className="text-xs font-medium text-muted-foreground">
+
+                        {/* Mostramos las variantes elegidas de forma elegante */}
+                        {item.variantInfo && (
+                          <p className="text-xs text-foreground/60 mb-2 font-medium">
+                            {item.variantInfo}
+                          </p>
+                        )}
+
+                        <p className="text-sm font-bold text-foreground">
                           ${Number(item.price).toLocaleString("es-AR")}
                         </p>
                       </div>
@@ -131,41 +145,32 @@ export const CartDrawer = () => {
                       {/* CONTROLES DE CANTIDAD */}
                       <div className="flex flex-col items-end justify-between gap-2">
                         <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          onClick={() => removeFromCart(item.cartItemId)}
+                          className="text-foreground/30 hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="size-4" />
                         </button>
-                        <div className="flex items-center gap-3 bg-muted rounded-lg p-1">
+                        <div className="flex items-center gap-3 border border-border p-1">
                           <button
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
+                              updateQuantity(item.cartItemId, item.quantity - 1)
                             }
-                            className="p-1 hover:bg-background rounded-md transition-all disabled:opacity-30"
+                            className="p-1 hover:bg-border/50 transition-all disabled:opacity-30 text-foreground"
                             disabled={item.quantity <= 1}
                           >
                             <Minus className="size-3" />
                           </button>
-                          <span className="text-xs font-bold w-4 text-center">
+                          <span className="text-xs font-bold w-4 text-center text-foreground">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
+                              updateQuantity(item.cartItemId, item.quantity + 1)
                             }
-                            className="p-1 hover:bg-background rounded-md transition-all"
+                            className="p-1 hover:bg-border/50 transition-all text-foreground"
                           >
                             <Plus className="size-3" />
                           </button>
-                        </div>
-                        <div>
-                          Total:
-                          <b>
-                            $
-                            {(
-                              item.quantity * Number(item.price)
-                            ).toLocaleString("es-AR")}
-                          </b>
                         </div>
                       </div>
                     </motion.div>
@@ -175,22 +180,22 @@ export const CartDrawer = () => {
 
               {/* FOOTER */}
               {cart.length > 0 && (
-                <div className="p-6 bg-card border-t border-border space-y-4">
-                  <div className="flex justify-between items-center px-1">
-                    <span className="text-xs font-bold uppercase text-muted-foreground">
+                <div className="p-6 bg-background border-t border-border space-y-5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold uppercase tracking-widest text-foreground/60">
                       Total Estimado
                     </span>
                     <span className="text-2xl font-black text-foreground">
                       ${totalPrice.toLocaleString("es-AR")}
                     </span>
                   </div>
-                  <Button
+                  <button
                     onClick={() => setShowWSModal(true)}
-                    className="w-full h-14 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95"
+                    className="w-full h-14 bg-foreground text-background font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition-colors hover:bg-foreground/90"
                   >
                     Revisar Pedido
-                    <MessageCircle className="size-5" />
-                  </Button>
+                    <MessageCircle className="size-4" />
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -203,49 +208,49 @@ export const CartDrawer = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-150 flex items-center justify-center p-4 bg-black/80  h-screen"
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 min-h-screen"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-[#e5ddd5] w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10"
+              className="bg-[#e5ddd5] w-full max-w-sm overflow-hidden shadow-2xl border border-white/10"
             >
               {/* Header WhatsApp */}
               <div className="bg-[#075e54] p-4 text-white flex items-center gap-3">
                 <div className="size-10 bg-white/20 rounded-full flex items-center justify-center text-xl font-bold">
-                  M
+                  D
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Marukis Alfajores</h3>
+                  <h3 className="font-bold text-sm">Don Quijote</h3>
                   <p className="text-[10px] opacity-70">En línea ahora</p>
                 </div>
               </div>
 
               {/* Cuerpo del Chat */}
-              <div className="p-4 space-y-4 min-h-50 flex flex-col justify-end">
+              <div className="p-4 space-y-4 min-h-[250px] flex flex-col justify-end">
                 <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] self-start text-[11px] leading-relaxed">
-                  ¡Hola! ¿Cómo estás? Contanos qué sabores te gustaría pedir hoy
-                  🍪
+                  ¡Hola! Bienvenido a Don Quijote. ¿Qué prendas te interesan
+                  para pasar a probarte? 👔
                 </div>
                 <div className="bg-[#dcf8c6] p-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] self-end text-[11px] whitespace-pre-wrap leading-relaxed relative">
                   {generateWSMessage()}
                   <span className="block text-[9px] text-right opacity-50 mt-1">
-                    10:45 AM
+                    Ahora
                   </span>
                 </div>
               </div>
 
               {/* Botones Acción */}
-              <div className="p-4 bg-white/50 flex gap-2">
+              <div className="p-4 bg-white flex gap-2 border-t border-gray-200">
                 <button
                   onClick={() => setShowWSModal(false)}
-                  className="flex-1 py-3 text-xs font-bold uppercase text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex-1 py-3 text-xs font-bold uppercase text-gray-500 hover:text-gray-800 transition-colors"
                 >
                   Volver
                 </button>
                 <button
                   onClick={handleFinalSend}
-                  className="flex-2 py-3 bg-[#25d366] text-white rounded-xl font-bold uppercase text-xs shadow-md hover:bg-[#1ebe57] flex items-center justify-center gap-2"
+                  className="flex-[2] py-3 bg-[#25d366] text-white font-bold uppercase text-xs shadow-md hover:bg-[#1ebe57] flex items-center justify-center gap-2 transition-colors"
                 >
                   <Check className="size-4" /> Enviar ahora
                 </button>

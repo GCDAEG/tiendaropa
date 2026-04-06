@@ -9,30 +9,27 @@
 }
 
 :root {
-  /* Fondo con un levísimo tono rosado para mantener la calidez de pastelería boutique */
-  --background: #fdf8f8;
+  /* Blanco puro para máxima limpieza visual */
+  --background: #ffffff;
   
-  /* Texto en un gris piedra muy oscuro para excelente legibilidad y contraste */
-  --foreground: #292524; 
+  /* Negro absoluto para textos principales */
+  --foreground: #000000; 
 
-  /* Tono rosa frambuesa (pink-600) para botones, links y acentos principales */
-  --primary: #db2777; 
+  /* Negro como color primario para botones (Estilo Zara/Mango) */
+  --primary: #000000; 
 
-  /* Rosa muy pálido/grisáceo para separadores y bordes de tarjetas */
-  --border: #fce7f3; 
+  /* Gris Elegante para bordes, separadores y fondos secundarios */
+  --border: #f3f4f6; 
 
-  /* Radio de bordes estándar para mantener una estructura moderna */
-  --radius: 0.5rem;
-}
-
-button{
-  @apply cursor-pointer
+  /* Bordes rectos para un look corporativo, premium y masculino */
+  --radius: 0rem;
 }
 
 @layer base {
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* Tipografía Sans-serif moderna y limpia */
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
 
   img {
@@ -41,8 +38,8 @@ button{
 }
 
 @layer components {
-  /* Tarjeta adaptada al estilo boutique */
-  .card-maruki {
-    @apply border border-border bg-[#ffffff] rounded-[--radius-custom] p-4 transition-all duration-300 hover:shadow-md hover:border-primary/40;
+  /* Tarjeta de producto minimalista sin sombras pesadas, solo borde sutil */
+  .card-quijote {
+    @apply border border-border bg-white transition-all duration-300 hover:border-foreground/20;
   }
 }

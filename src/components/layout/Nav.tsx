@@ -25,7 +25,7 @@ export function Navbar() {
     <motion.nav
       layout
       ref={ref}
-      className={cn("fixed top-0 z-50 w-full transition-all shadow-sm")}
+      className={cn("sticky top-0 z-50 w-full transition-all shadow-sm h-20")}
     >
       {/* <Banner isScrolled={isScrolled} /> */}
       <DesktopMenu sections={sections} activeSection={activeSection} />
