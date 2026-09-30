@@ -1,264 +1,68 @@
 "use client";
-import React, { useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
+import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import {
-  ShoppingBag,
-  X,
-  Trash2,
-  MessageCircle,
-  Plus,
-  Minus,
-  Check,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LINDE_PRODUCTS } from "@/lib/mockData";
+import { buildInquiryMessage } from "@/lib/inquiry";
+import { siteConfig } from "@/lib/site/siteConfig";
 
-export const CartDrawer = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [showWSModal, setShowWSModal] = useState(false);
+export function CartDrawer() {
+  const [open, setOpen] = useState(false);
+  const [review, setReview] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const reviewCloseButton = useRef<HTMLButtonElement>(null);
+  const reviewTrigger = useRef<HTMLButtonElement>(null);
   const { cart, removeFromCart, updateQuantity, totalPrice } = useCart();
-  const WHATSAPP_NUMBER = "5493446123456";
+  const selectedQuantity = cart.reduce((quantity, item) => quantity + item.quantity, 0);
+  const lines = cart.flatMap((item) => {
+    const product = LINDE_PRODUCTS.find((entry) => entry.id === item.id);
+    return product ? [{ product, quantity: item.quantity, ...(item.size ? { size: item.size } : {}), ...(item.color ? { color: item.color } : {}) }] : [];
+  });
+  const message = buildInquiryMessage(lines);
 
-  const generateWSMessage = () => {
-    const productList = cart
-      .map((item) => {
-        // Agregamos la información de la variante si existe
-        const variantStr = item.variantInfo ? ` (${item.variantInfo})` : "";
-        return `${item.quantity}x ${item.title}${variantStr} - $${(Number(item.price) * item.quantity).toLocaleString("es-AR")}`;
-      })
-      .join("\n");
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    if (review) reviewCloseButton.current?.focus();
+    else closeButton.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { if (review) setReview(false); else setOpen(false); }
+      if (event.key === "Tab") {
+        const panel = document.getElementById(review ? "selection-review" : "selection-drawer");
+        const nodes = panel?.querySelectorAll<HTMLElement>('button:not([disabled]), [href]');
+        if (!nodes?.length) return;
+        const first = nodes[0], last = nodes[nodes.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", onKey); };
+  }, [open, review]);
 
-    return `NUEVO PEDIDO - DON QUIJOTE 👔\n\nHola! Me gustaría consultar por la siguiente selección:\n\n${productList}\n\nTOTAL ESTIMADO: $${totalPrice.toLocaleString("es-AR")}\n\n¿Tienen disponibilidad en el local para pasar a probarme?`;
+  const close = () => { setReview(false); setOpen(false); requestAnimationFrame(() => trigger.current?.focus({ preventScroll: true })); };
+  const closeReview = () => { setReview(false); requestAnimationFrame(() => reviewTrigger.current?.focus({ preventScroll: true })); };
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(message); setCopied(true); setCopyError(false); }
+    catch { setCopied(false); setCopyError(true); }
   };
 
-  const handleFinalSend = () => {
-    const message = generateWSMessage();
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
-      "_blank",
-    );
-    setShowWSModal(false);
-    setIsOpen(false);
-  };
-
-  return (
-    <>
-      {/* BOTÓN DISPARADOR */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="group relative flex items-center justify-center p-2 text-foreground/80 hover:text-foreground transition-colors"
-      >
-        <ShoppingBag className="size-6" strokeWidth={1.5} />
-        <AnimatePresence>
-          {cart.length > 0 && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute top-0 right-0 size-4 bg-foreground text-[9px] text-background flex items-center justify-center rounded-full font-bold shadow-sm"
-            >
-              {cart.reduce((acc, item) => acc + item.quantity, 0)}
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </button>
-
-      {/* DRAWER Y MODAL */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm min-h-screen"
-            />
-
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.3 }}
-              className="fixed top-0 right-0 h-screen w-full max-w-md z-[130] bg-background shadow-2xl flex flex-col border-l border-border"
-            >
-              {/* HEADER */}
-              <div className="p-6 border-b border-border flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">
-                    Tu Selección
-                  </span>
-                  <h2 className="text-xl font-bold text-foreground tracking-tight uppercase">
-                    Carrito de Compras
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-border/50 transition-colors text-foreground"
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
-
-              {/* LISTA DE PRODUCTOS */}
-              <div
-                className="flex-1 overflow-y-auto p-6 space-y-4 data-lenis-prevent"
-                onWheel={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
-              >
-                {cart.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-foreground/30">
-                    <ShoppingBag
-                      className="size-16 mb-4 opacity-50"
-                      strokeWidth={1}
-                    />
-                    <p className="text-xs font-bold uppercase tracking-widest text-foreground/50">
-                      No hay prendas seleccionadas
-                    </p>
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                    <motion.div
-                      key={item.cartItemId} // Usamos el ID único generado en el Context
-                      layout
-                      className="flex gap-4 p-4 border border-border bg-background transition-colors hover:border-foreground/20"
-                    >
-                      <div className="flex-1">
-                        <span className="text-[9px] font-bold text-foreground/50 uppercase tracking-widest block mb-1">
-                          {item.category}
-                        </span>
-                        <h4 className="text-sm font-bold leading-tight mb-1 uppercase tracking-tight text-foreground">
-                          {item.title}
-                        </h4>
-
-                        {/* Mostramos las variantes elegidas de forma elegante */}
-                        {item.variantInfo && (
-                          <p className="text-xs text-foreground/60 mb-2 font-medium">
-                            {item.variantInfo}
-                          </p>
-                        )}
-
-                        <p className="text-sm font-bold text-foreground">
-                          ${Number(item.price).toLocaleString("es-AR")}
-                        </p>
-                      </div>
-
-                      {/* CONTROLES DE CANTIDAD */}
-                      <div className="flex flex-col items-end justify-between gap-2">
-                        <button
-                          onClick={() => removeFromCart(item.cartItemId)}
-                          className="text-foreground/30 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                        <div className="flex items-center gap-3 border border-border p-1">
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.cartItemId, item.quantity - 1)
-                            }
-                            className="p-1 hover:bg-border/50 transition-all disabled:opacity-30 text-foreground"
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="size-3" />
-                          </button>
-                          <span className="text-xs font-bold w-4 text-center text-foreground">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.cartItemId, item.quantity + 1)
-                            }
-                            className="p-1 hover:bg-border/50 transition-all text-foreground"
-                          >
-                            <Plus className="size-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-
-              {/* FOOTER */}
-              {cart.length > 0 && (
-                <div className="p-6 bg-background border-t border-border space-y-5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold uppercase tracking-widest text-foreground/60">
-                      Total Estimado
-                    </span>
-                    <span className="text-2xl font-black text-foreground">
-                      ${totalPrice.toLocaleString("es-AR")}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setShowWSModal(true)}
-                    className="w-full h-14 bg-foreground text-background font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition-colors hover:bg-foreground/90"
-                  >
-                    Revisar Pedido
-                    <MessageCircle className="size-4" />
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-
-        {/* MODAL SIMULADOR WHATSAPP */}
-        {showWSModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 min-h-screen"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-[#e5ddd5] w-full max-w-sm overflow-hidden shadow-2xl border border-white/10"
-            >
-              {/* Header WhatsApp */}
-              <div className="bg-[#075e54] p-4 text-white flex items-center gap-3">
-                <div className="size-10 bg-white/20 rounded-full flex items-center justify-center text-xl font-bold">
-                  D
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm">Don Quijote</h3>
-                  <p className="text-[10px] opacity-70">En línea ahora</p>
-                </div>
-              </div>
-
-              {/* Cuerpo del Chat */}
-              <div className="p-4 space-y-4 min-h-[250px] flex flex-col justify-end">
-                <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] self-start text-[11px] leading-relaxed">
-                  ¡Hola! Bienvenido a Don Quijote. ¿Qué prendas te interesan
-                  para pasar a probarte? 👔
-                </div>
-                <div className="bg-[#dcf8c6] p-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] self-end text-[11px] whitespace-pre-wrap leading-relaxed relative">
-                  {generateWSMessage()}
-                  <span className="block text-[9px] text-right opacity-50 mt-1">
-                    Ahora
-                  </span>
-                </div>
-              </div>
-
-              {/* Botones Acción */}
-              <div className="p-4 bg-white flex gap-2 border-t border-gray-200">
-                <button
-                  onClick={() => setShowWSModal(false)}
-                  className="flex-1 py-3 text-xs font-bold uppercase text-gray-500 hover:text-gray-800 transition-colors"
-                >
-                  Volver
-                </button>
-                <button
-                  onClick={handleFinalSend}
-                  className="flex-[2] py-3 bg-[#25d366] text-white font-bold uppercase text-xs shadow-md hover:bg-[#1ebe57] flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Check className="size-4" /> Enviar ahora
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
+  return <>
+    <button ref={trigger} type="button" onClick={() => setOpen(true)} aria-label={`Mi selección${selectedQuantity ? `, ${selectedQuantity} ${selectedQuantity === 1 ? "prenda" : "prendas"}` : ""}`} aria-haspopup="dialog" className="relative grid min-h-11 min-w-11 place-items-center focus-visible:outline-2 focus-visible:outline-accent"><ShoppingBag size={21} strokeWidth={1.5} />{selectedQuantity > 0 && <span className="absolute right-0 top-0 grid size-4 place-items-center rounded-full bg-accent text-[10px] text-white">{selectedQuantity}</span>}</button>
+    {open && <div className="fixed inset-0 z-[110] bg-ink/45" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+      <aside id="selection-drawer" role="dialog" aria-modal="true" aria-labelledby="selection-title" className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-paper shadow-panel">
+        <header className="flex items-center justify-between border-b border-line px-5 py-5"><div><p className="eyebrow">Linde · Indumentaria</p><h2 id="selection-title" className="mt-1 font-display text-xl">Mi selección</h2></div><button ref={closeButton} type="button" onClick={close} aria-label="Cerrar mi selección" className="grid size-11 place-items-center"><X /></button></header>
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {cart.length === 0 ? <div className="flex h-full flex-col items-center justify-center text-center"><ShoppingBag size={34} strokeWidth={1.2} className="mb-4 text-muted"/><p className="font-display text-lg">Todavía no agregaste prendas</p><p className="mt-2 max-w-xs text-sm text-muted">Elegí un producto y sus variantes para preparar una consulta.</p></div> : <ul className="space-y-5">{cart.map((item) => <li key={item.cartItemId} className="flex gap-4 border-b border-line pb-5"><div className="min-w-0 flex-1"><p className="text-xs text-muted">{item.category}</p><h3 className="mt-1 font-medium">{item.title}</h3>{(item.size || item.color) && <p className="mt-1 text-sm text-muted">{[item.size ? `Talle ${item.size}` : null, item.color ? `Color ${item.color}` : null].filter(Boolean).join(" · ")}</p>}<p className="mt-2 text-sm">${item.price.toLocaleString("es-AR")} ARS</p><div className="mt-3 inline-flex h-10 items-center border border-line"><button type="button" aria-label={`Restar una unidad de ${item.title}`} disabled={item.quantity <= 1} onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)} className="grid size-10 place-items-center disabled:opacity-40"><Minus size={15}/></button><span aria-label="Cantidad" className="w-8 text-center text-sm">{item.quantity}</span><button type="button" aria-label={`Sumar una unidad de ${item.title}`} onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)} className="grid size-10 place-items-center"><Plus size={15}/></button></div></div><button type="button" onClick={() => removeFromCart(item.cartItemId)} aria-label={`Quitar ${item.title}`} className="grid size-11 shrink-0 place-items-center text-muted hover:text-ink"><Trash2 size={17}/></button></li>)}</ul>}
+        </div>
+        {cart.length > 0 && <footer className="space-y-4 border-t border-line px-5 py-5"><div className="flex items-center justify-between"><span className="text-sm text-muted">Total de referencia</span><span className="font-medium">${totalPrice.toLocaleString("es-AR")} ARS</span></div><p className="text-xs leading-5 text-muted">Precios ilustrativos. La selección no reserva stock ni confirma una compra.</p><button ref={reviewTrigger} type="button" onClick={() => { setReview(true); setCopied(false); setCopyError(false); }} className="h-12 w-full bg-ink text-sm text-white">Revisar consulta</button></footer>}
+      </aside>
+      {review && <div className="fixed inset-0 z-[120] flex items-end justify-center bg-ink/50 p-3 sm:items-center sm:p-6"><section id="selection-review" role="dialog" aria-modal="true" aria-labelledby="review-title" className="w-full max-w-lg bg-paper p-5 shadow-panel sm:p-7"><div className="flex items-start justify-between"><div><p className="eyebrow">Modo demo</p><h2 id="review-title" className="mt-2 font-display text-xl">Revisar consulta</h2></div><button ref={reviewCloseButton} type="button" onClick={closeReview} aria-label="Volver a mi selección" className="grid size-11 place-items-center"><X /></button></div><p className="mt-3 text-sm leading-6 text-muted">Este mensaje es un ejemplo y no se enviará a una tienda real.</p><pre className="mt-4 max-h-56 overflow-auto whitespace-pre-wrap border border-line bg-white p-4 font-sans text-sm leading-6">{message}</pre><button type="button" onClick={copy} className="mt-5 min-h-12 w-full bg-ink px-4 text-sm text-white">{copied ? "Consulta copiada" : "Copiar consulta de ejemplo"}</button>{copyError && <p role="alert" className="mt-2 text-sm text-red-800">No se pudo acceder al portapapeles. Seleccioná y copiá el texto del mensaje.</p>}<a href={siteConfig.portfolioUrl} target="_blank" rel="noreferrer" className="mt-4 block text-center text-sm underline underline-offset-4">Quiero una web para mi negocio · TUWEBHOY</a></section></div>}
+    </div>}
+  </>;
+}

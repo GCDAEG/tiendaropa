@@ -1,89 +1,19 @@
 import type { Metadata } from "next";
-
+import { Instrument_Serif, Poppins } from "next/font/google";
 import "./globals.css";
-import { FooterSection } from "../components/layout/Footer";
-import ExampleMessage from "@/components/layout/Sections/Example";
+import { FooterSection } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Nav";
-import { roboto, lora, inter } from "@/lib/fonts";
-import ReactLenis from "lenis/react";
-import PageLoader from "./PageLoader";
-import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
 import { CartProvider } from "@/context/CartContext";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-poppins" });
+const instrumentSerif = Instrument_Serif({ subsets: ["latin"], weight: "400", display: "swap", variable: "--font-instrument-serif" });
 
 export const metadata: Metadata = {
-  title: {
-    default: "TWH Demo",
-    template: "%s | Tu Web Hoy",
-  },
-
-  description:
-    "Creamos páginas web simples y modernas para emprendedores. Ideales para mostrar tu negocio y empezar a vender.",
-
-  openGraph: {
-    title: "Tu web lista en días 🚀",
-    description:
-      "Páginas web modernas, claras y accesibles. Ideal para emprendedores y negocios chicos.",
-    images: [
-      {
-        url: "/preview.jpeg",
-        width: 1200,
-        height: 630,
-        alt: "Tu Web Hoy - Páginas web listas en días",
-      },
-    ],
-    type: "website",
-    locale: "es_AR",
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Tu web lista en días",
-    description:
-      "Webs modernas y accesibles para emprendedores. Lista para compartir y vender.",
-    images: ["/preview.jpeg"],
-  },
+  title: "Linde — Catálogo de indumentaria | Demo de TUWEBHOY",
+  description: "Catálogo de indumentaria de demostración desarrollado por TUWEBHOY.",
+  openGraph: { title: "Linde — Catálogo de indumentaria | Demo de TUWEBHOY", description: "Catálogo de indumentaria de demostración desarrollado por TUWEBHOY.", locale: "es_AR", type: "website" },
 };
 
-// app/layout.tsx (versión recomendada)
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html
-      lang="es"
-      className={cn(
-        roboto.variable,
-        lora.variable,
-        inter.variable,
-        "font-sans",
-        geist.variable,
-      )}
-      suppressHydrationWarning
-    >
-      <body
-        className="
-          min-h-screen antialiased text-foreground bg-fixed
-          overflow-x-hidden
-          bg-background
-          min-w-screen
-        "
-      >
-        {/* Opcional: capa extra para overlay si quieres más control */}
-        <ReactLenis root>
-          <CartProvider>
-            <PageLoader />
-            <Navbar />
-            {children}
-            <FooterSection />
-            <ExampleMessage />
-          </CartProvider>
-        </ReactLenis>
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="es-AR" className={`${poppins.variable} ${instrumentSerif.variable}`}><body className="min-h-screen antialiased"><CartProvider><Navbar />{children}<FooterSection /></CartProvider></body></html>;
 }

@@ -1,11 +1,9 @@
 import React from "react";
 import { ResponsiveImage } from "./ResponsiveImage";
 
-interface BannerProps {}
-
-const Banner: React.FC<BannerProps> = ({}) => {
+const Banner = () => {
   return (
-    <div className="fixed  border border-red-500 inset-0 -z-10 pointer-events-none">
+    <div className="pointer-events-none fixed inset-0 -z-10 border border-red-500">
       <ResponsiveImage
         src="/banner.png"
         alt="Hero image"

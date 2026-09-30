@@ -1,45 +1,40 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-border: var(--border);
-  --radius-custom: var(--radius);
+  --color-paper: var(--paper);
+  --color-white: #ffffff;
+  --color-sand: var(--sand);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --shadow-panel: 0 12px 40px rgb(37 42 39 / 12%);
+  --font-sans: var(--font-poppins), Arial, sans-serif;
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --max-width-site: 1440px;
 }
 
 :root {
-  /* Blanco puro para máxima limpieza visual */
-  --background: #ffffff;
-  
-  /* Negro absoluto para textos principales */
-  --foreground: #000000; 
-
-  /* Negro como color primario para botones (Estilo Zara/Mango) */
-  --primary: #000000; 
-
-  /* Gris Elegante para bordes, separadores y fondos secundarios */
-  --border: #f3f4f6; 
-
-  /* Bordes rectos para un look corporativo, premium y masculino */
-  --radius: 0rem;
+  --paper: #faf8f4;
+  --sand: #eeeae3;
+  --ink: #252a27;
+  --muted: #60645e;
+  --line: #dadbd4;
+  --accent: #596548;
 }
 
-@layer base {
-  body {
-    @apply bg-background text-foreground antialiased;
-    /* Tipografía Sans-serif moderna y limpia */
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  }
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-poppins), Arial, sans-serif; font-size: 16px; letter-spacing: -0.01em; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+img { object-fit: cover; }
+::selection { background: var(--accent); color: #fff; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.eyebrow { color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
+section[id] { scroll-margin-top: 5rem; }
 
-  img {
-    @apply object-cover;
-  }
-}
-
-@layer components {
-  /* Tarjeta de producto minimalista sin sombras pesadas, solo borde sutil */
-  .card-quijote {
-    @apply border border-border bg-white transition-all duration-300 hover:border-foreground/20;
-  }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

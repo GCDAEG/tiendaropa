@@ -38,8 +38,8 @@ export function Section({
       className={cn(
         // w-full previene el scroll horizontal no deseado que causa w-screen
         "relative w-full px-5 md:px-8 lg:px-40 py-12 md:py-16",
-        // 5rem equivale a 80px (altura estándar de un nav). Cambialo si tu nav mide distinto.
-        height === "screen" && "min-h-[calc(100vh-5rem)]",
+        height === "screen" &&
+          "min-h-[calc(100svh_-_4rem)] lg:min-h-[calc(100svh_-_5rem)]",
         className,
         animate === "fade" && isInView && "animate-fade-in",
       )}

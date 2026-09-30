@@ -64,7 +64,7 @@ export default function BackgroundVideo({
 
   return (
     <div
-      className={`relative overflow-hidden ${className} flex justify-center min-h-[calc(100vh-var(--navbar-height))] px-4 md:px-8 lg:px-40`}
+      className={`relative overflow-hidden ${className} flex justify-center min-h-[calc(100svh_-_4rem)] px-4 md:px-8 lg:min-h-[calc(100svh_-_5rem)] lg:px-40`}
       id={id}
     >
       {/* Video de fondo */}
